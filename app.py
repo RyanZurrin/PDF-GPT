@@ -21,18 +21,17 @@ import itertools
 def generate_eval(text, N, chunk):
     n = len(text)
     if n != 0:
-      starting_indices = [random.randint(0, n-chunk) for _ in range(N)]
-      sub_sequences = [text[i:i+chunk] for i in starting_indices]
-      chain = QAGenerationChain.from_llm(ChatOpenAI(temperature=0))
-      eval_set = []
-      for i, b in enumerate(sub_sequences):
-          try:
-              qa = chain.run(b)
-              eval_set.append(qa)
-          except:
-              pass
-      eval_set_full = list(itertools.chain.from_iterable(eval_set))
-      return eval_set_full
+        starting_indices = [random.randint(0, n-chunk) for _ in range(N)]
+        sub_sequences = [text[i:i+chunk] for i in starting_indices]
+        chain = QAGenerationChain.from_llm(ChatOpenAI(temperature=0))
+        eval_set = []
+        for b in sub_sequences:
+            try:
+                qa = chain.run(b)
+                eval_set.append(qa)
+            except:
+                pass
+        return list(itertools.chain.from_iterable(eval_set))
 
 @st.cache_data(show_spinner=False)
 def get_pdf_text(pdf_docs):
@@ -53,8 +52,7 @@ def get_text_chunks(text):
         chunk_overlap=200,
         length_function=len
     )
-    chunks = text_splitter.split_text(text)
-    return chunks
+    return text_splitter.split_text(text)
 
 @st.cache_resource(show_spinner=False)
 def get_vectorstore(text_chunks):
@@ -84,13 +82,11 @@ def get_conversation_chain(_vectorstore):
     llm = ChatOpenAI(temperature=0.5, model='gpt-3.5-turbo')
     memory = ConversationBufferMemory(
         memory_key="chat_history", return_messages=True)
-    conversation_chain = ConversationalRetrievalChain.from_llm(
+    return ConversationalRetrievalChain.from_llm(
         llm=llm,
         retriever=_vectorstore.as_retriever(),
         memory=memory,
     )
-
-    return conversation_chain
 
 @st.cache_data(show_spinner=False)
 def handle_userinput(user_question):
